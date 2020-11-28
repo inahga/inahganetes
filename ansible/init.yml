@@ -1,101 +1,50 @@
-- name: install a single node kubernetes instance
+- name: install defaults
   hosts: all
-  become: yes
   vars:
-    - os: "CentOS_8"
-    - k8s_minor_version: "1.19"
-    - k8s_revision_version: "1.19.4"
-    - k8s_pod_subnet: "10.100.0.0/16"
+    - ansible_ssh_user: root
+    - users:
+        - name: aghani
+          authorized_keys: https://github.com/inahga.keys
 
   tasks:
-    - name: configure sysctl
-      ansible.posix.sysctl:
+    - name: add users
+      ansible.builtin.user:
         name: "{{ item.name }}"
-        value: "{{ item.value }}"
+        groups: wheel
         state: present
-        sysctl_set: yes
-        reload: yes
-      loop:
-        - name: net.bridge.bridge-nf-call-ip6tables
-          value: 1
-        - name: net.bridge.bridge-nf-call-iptables
-          value: 1
-        - name: net.ipv4.ip_forward
-          value: 1
+      with_items: "{{ users }}"
 
-    - name: disable swap (1/2)
-      command: swapoff -a
-    - name: disable swap (2/2)
-      mount:
-        name: swap
-        fstype: swap
-        state: absent
-
-    - name: configure firewalld
-      ansible.posix.firewalld:
-        port: "{{ item }}"
-        immediate: yes
-        permanent: yes
-        zone: public
-        state: enabled
-      loop:
-        - 6443/tcp
-        - 2379-2380/tcp
-        - 10250-10252/tcp
-        - 30000-32767/tcp
-
-    - name: install cri-o repo
-      ansible.builtin.get_url:
-        url: "https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable:cri-o:{{ k8s_minor_version }}/{{ os }}/devel:kubic:libcontainers:stable:cri-o:{{ k8s_minor_version }}.repo"
-        dest: "/etc/yum.repos.d/devel:kubic:libcontainers:stable:cri-o:{{ k8s_minor_version }}.repo"
-
-    - name: install cri-o stable repo
-      ansible.builtin.get_url:
-        url: "https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/{{ os }}/devel:kubic:libcontainers:stable.repo"
-        dest: "/etc/yum.repos.d/devel:kubic:libcontainers:stable.repo"
-
-    - name: install kubernetes repo
-      ansible.builtin.yum_repository:
-        name: Kubernetes
-        description: Kubernetes
-        baseurl: https://packages.cloud.google.com/yum/repos/kubernetes-el7-$basearch
-        enabled: yes
-        gpgcheck: yes
-        repo_gpgcheck: yes
-        gpgkey:
-          - https://packages.cloud.google.com/yum/doc/yum-key.gpg
-          - https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
-        exclude:
-          - kubelet
-          - kubeadm
-          - kubectl
+    - name: install ssh keys
+      ansible.posix.authorized_key:
+        user: "{{ item.name }}"
+        key: "{{ item.authorized_keys }}"
+        exclusive: yes
         state: present
+      with_items: "{{ users }}"
 
-    - name: install packages
+    - name: update system
       ansible.builtin.yum:
-        name:
-          - "kubelet-{{ k8s_revision_version }}"
-          - "kubectl-{{ k8s_revision_version }}"
-          - "kubeadm-{{ k8s_revision_version }}"
-          - cri-o
-        disable_excludes: Kubernetes
+        name: '*'
+        state: latest
 
-    - name: start services
-      ansible.builtin.service:
-        name: "{{ item }}"
-        state: started
-        enabled: yes
-      loop:
-        - crio
-        - kubelet
+    - name: configure automatic updates (weekly)
+      ansible.builtin.cron:
+        name: dnf cron
+        job: "dnf update -y"
+        minute: "0"
+        hour: "0"
+        weekday: "5"
+        user: root
 
-    - name: get kubeadm config
+    - name: set sane sshd defaults
       ansible.builtin.template:
-        src: kubeadm-config.yaml.j2
-        dest: /tmp/kubeadm-config.yaml
+        src: sshd_config.j2
+        dest: /etc/ssh/sshd_config
+        owner: root
+        group: root
+        mode: '0600'
+        validate: /usr/sbin/sshd -t -f %s
+        backup: yes
 
-    - name: run kubeadm init
-      command: kubeadm init --config=/tmp/kubeadm-config.yaml
-
-    - name: remove k8s main taint
-      shell: KUBECONFIG=/etc/kubernetes/admin.conf kubectl taint nodes --all node-role.kubenetes.io/master-
+    - name: reboot the system
+      command: reboot
