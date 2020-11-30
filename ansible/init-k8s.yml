@@ -100,6 +100,13 @@
           - cri-o
         disable_excludes: Kubernetes
 
+    # https://github.com/kubernetes/kubernetes/issues/56850#issuecomment-354539158
+    - name: fix kubelet logging bug
+      lineinfile:
+        path: /etc/systemd/system/multi-user.target.wants/kubelet.service
+        regexp: '^ExecStart='
+        line: ExecStart=/usr/bin/kubelet --runtime-cgroups=/systemd/system.slice --kubelet-cgroups=/systemd/system.slice
+
     - name: start services
       ansible.builtin.service:
         name: "{{ item }}"
@@ -113,9 +120,15 @@
       ansible.builtin.template:
         src: kubeadm-config.yaml.j2
         dest: /tmp/kubeadm-config.yaml
+      tags:
+        - run-kubeadm
 
     - name: run kubeadm init
       command: kubeadm init --config=/tmp/kubeadm-config.yaml
+      tags:
+        - run-kubeadm
 
     - name: remove k8s main taint
       shell: KUBECONFIG=/etc/kubernetes/admin.conf kubectl taint nodes --all node-role.kubernetes.io/master-
+      tags:
+        - run-kubeadm
