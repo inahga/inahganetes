@@ -85,8 +85,7 @@ remote_exec() {
 }
 
 create() {
-	# shellcheck disable=SC2029
-	KUBECONFIG=$(remote_exec "sudo kubeadm alpha kubeconfig user --client-name $CLIENT_NAME 2>/dev/null")
+	KUBECONFIG=$(remote_exec "sudo kubeadm alpha kubeconfig user --client-name $CLIENT_NAME 2>/dev/null | sed \"s/kubernetes/$SERVER/g\"")
 
 	remote_exec "KUBECONFIG=/etc/kubernetes/admin.conf sudo -E kubectl create clusterrolebinding $CLIENT_NAME --clusterrole=$CLUSTERROLE --user=$CLIENT_NAME" 1>&2
 
