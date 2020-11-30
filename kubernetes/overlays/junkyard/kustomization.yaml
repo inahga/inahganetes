@@ -1,0 +1,23 @@
+resources:
+  - calico-custom-resources.yaml
+  - ../../ingress
+  - ../../cert-manager
+
+patches:
+  - patch: |-
+      - op: replace
+        path: /spec/acme/solvers/0/dns01/route53/accessKeyID
+        value: AKIAYV7RA74C7CBAQU5A
+      # - op: replace
+      #   path: /spec/acme/server
+      #   value: https://acme-v02.api.letsencrypt.org/directory
+    target:
+      kind: ClusterIssuer
+      name: letsencrypt
+
+secretGenerator:
+  - name: letsencrypt-route53-key
+    namespace: cert-manager
+    files:
+      - secrets/cert-manager/access-key-secret
+      - secrets/cert-manager/access-key-id
