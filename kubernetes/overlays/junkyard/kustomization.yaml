@@ -1,6 +1,5 @@
 resources:
   - calico-custom-resources.yaml
-  - ../../ingress
   - ../../cert-manager
 
 patches:
@@ -14,6 +13,9 @@ patches:
     target:
       kind: ClusterIssuer
       name: letsencrypt
+
+generatorOptions:
+  disableNameSuffixHash: true
 
 secretGenerator:
   - name: letsencrypt-route53-key
