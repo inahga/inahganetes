@@ -8,6 +8,14 @@
     - k8s_pod_subnet: "10.100.0.0/16"
 
   tasks:
+    - name: modprobe br_netfilter (1/2)
+      command: modprobe br_netfilter
+
+    - name: modprobe br_netfilter (2/2)
+      copy:
+        dest: /etc/modules-load.d/k8s.conf
+        content: br_netfilter
+      
     - name: configure sysctl
       ansible.posix.sysctl:
         name: "{{ item.name }}"
@@ -25,13 +33,14 @@
 
     - name: disable swap (1/2)
       command: swapoff -a
+
     - name: disable swap (2/2)
       mount:
         name: swap
         fstype: swap
         state: absent
 
-    - name: configure firewalld
+    - name: configure firewalld (1/2)
       ansible.posix.firewalld:
         port: "{{ item }}"
         immediate: yes
@@ -43,6 +52,17 @@
         - 2379-2380/tcp
         - 10250-10252/tcp
         - 30000-32767/tcp
+        - 80/tcp
+        - 443/tcp
+        - 8443/tcp
+
+    - name: configure firewalld (2/2)
+      ansible.posix.firewalld:
+        masquerade: yes
+        immediate: yes
+        permanent: yes
+        zone: public
+        state: enabled
 
     - name: install cri-o repo
       ansible.builtin.get_url:
@@ -98,4 +118,4 @@
       command: kubeadm init --config=/tmp/kubeadm-config.yaml
 
     - name: remove k8s main taint
-      shell: KUBECONFIG=/etc/kubernetes/admin.conf kubectl taint nodes --all node-role.kubenetes.io/master-
+      shell: KUBECONFIG=/etc/kubernetes/admin.conf kubectl taint nodes --all node-role.kubernetes.io/master-
