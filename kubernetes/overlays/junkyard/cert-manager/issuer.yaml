@@ -12,7 +12,7 @@ spec:
       - dns01:
           route53:
             region: us-west-2
-            accessKeyID: AWS_ACCESS_KEY_ID
+            accessKeyID: AKIAYV7RA74C4XUQG2UH
             secretAccessKeySecretRef:
               name: letsencrypt-route53-key
               key: access-key-secret
