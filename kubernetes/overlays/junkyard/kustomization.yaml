@@ -20,3 +20,9 @@ secretGenerator:
     files:
       - secrets/cert-manager/access-key-secret
       - secrets/cert-manager/access-key-id
+  - name: inahga-org-ca
+    namespace: cert-manager
+    files:
+      - secrets/cert-manager/ca.key
+      - secrets/cert-manager/ca.pem
+    type: kubernetes.io/tls
