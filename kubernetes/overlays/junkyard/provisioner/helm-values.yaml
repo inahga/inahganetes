@@ -1,0 +1,7 @@
+classes:
+  - name: fast
+    hostDir: /data/fast/bind
+    storageClass: false
+  - name: slow
+    hostDir: /data/slow/bind
+    storageClass: false
