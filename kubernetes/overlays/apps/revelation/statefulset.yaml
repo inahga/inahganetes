@@ -36,7 +36,7 @@ spec:
             - /bin/bash
           args:
             - "-c"
-            - groupadd -g 4000 revelation && useradd -u 4000 -g 4000 revelation && su revelation && /data/ServerStart.sh
+            - groupadd -g 4000 revelation && useradd -u 4000 -g 4000 revelation && su revelation -c /data/ServerStart.sh
           env:
             - name: EULA
               value: "TRUE"
