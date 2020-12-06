@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: revelation
+  labels:
+    app.kubernetes.io/name: revelation
+spec:
+  serviceName: revelation
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: revelation
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: revelation
+    spec:
+      securityContext:
+        fsGroup: 4000
+      initContainers:
+        - name: revelation-init
+          image: "openjdk:8-jre"
+          command:
+            - chown
+            - "4000:4000"
+            - /data
+            - -R
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      containers:
+        - name: revelation
+          image: "openjdk:8-jre"
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/bash
+          args:
+            - "-c"
+            - groupadd -g 4000 revelation && useradd -u 4000 -g 4000 revelation && su revelation && /data/ServerStart.sh
+          env:
+            - name: EULA
+              value: "TRUE"
+            - name: TYPE
+              value: PAPER
+          ports:
+            - name: minecraft
+              containerPort: 6900
+          livenessProbe:
+            tcpSocket:
+              port: minecraft
+            initialDelaySeconds: 300
+            timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 10
+          readinessProbe:
+            tcpSocket:
+              port: minecraft
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          hostPath:
+            path: /data/fast/revelation
+            type: DirectoryOrCreate
