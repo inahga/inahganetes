@@ -2,6 +2,7 @@ resources:
   - https://docs.projectcalico.org/manifests/tigera-operator.yaml
   - https://github.com/jetstack/cert-manager/releases/download/v1.1.0/cert-manager.yaml
   - https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v0.41.2/deploy/static/provider/baremetal/deploy.yaml
+  - https://github.com/kubevirt/kubevirt/releases/download/v0.35.0/kubevirt-operator.yaml
 
 # https://kubernetes.github.io/ingress-nginx/deploy/baremetal/#via-the-host-network
 patches:
