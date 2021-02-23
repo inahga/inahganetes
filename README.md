@@ -1,6 +1,8 @@
-# junkyard
+# inahganetes
 
-## Building the junkyard
+Kubernetes the hard way.
+
+## Building inahganetes
 
 Local prerequisites:
 - `ansible`
